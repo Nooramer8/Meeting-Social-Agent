@@ -1,0 +1,13 @@
+# Install this only when you are ready to fine-tune or run Hugging Face trained models.
+# It is larger than requirements.txt.
+transformers==4.47.1
+torch>=2.2.0
+sentencepiece==0.2.0
+accelerate>=0.34.0
+datasets>=2.20.0
+librosa>=0.10.0
+evaluate>=0.4.2
+jiwer>=3.0.4
+rouge-score>=0.1.2
+numpy>=1.26.0
+edge-tts>=6.1.12

@@ -1,0 +1,639 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Meeting Social Agent</title>
+  <style>
+    :root {
+      color-scheme: light;
+      font-family: Inter, "Segoe UI", Roboto, ui-sans-serif, system-ui, -apple-system, sans-serif;
+      --bg: #f4f7fc;
+      --surface: #ffffff;
+      --surface-alt: #f8faff;
+      --text: #172033;
+      --text-muted: #58627a;
+      --border: #dbe3f0;
+      --primary: #3554d1;
+      --primary-strong: #2440b6;
+      --shadow: 0 18px 44px rgba(17, 35, 79, 0.08);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      color: var(--text);
+      background:
+        radial-gradient(circle at 12% 12%, rgba(68, 120, 255, 0.11) 0, transparent 35%),
+        radial-gradient(circle at 88% 8%, rgba(125, 80, 255, 0.1) 0, transparent 30%),
+        var(--bg);
+      min-height: 100vh;
+    }
+    main { max-width: 1180px; margin: 0 auto; padding: 34px 18px 76px; }
+    .hero {
+      background: linear-gradient(130deg, #ffffff 0%, #eef3ff 100%);
+      border: 1px solid var(--border);
+      padding: 34px;
+      border-radius: 28px;
+      box-shadow: var(--shadow);
+      margin-bottom: 22px;
+    }
+    h1 { margin: 0 0 10px; font-size: clamp(30px, 5vw, 44px); letter-spacing: -0.04em; line-height: 1.1; }
+    h2 { margin: 0 0 14px; font-size: clamp(20px, 3vw, 25px); letter-spacing: -0.02em; line-height: 1.2; }
+    h3 { margin: 0 0 8px; }
+    p { margin: 0 0 12px; color: var(--text-muted); line-height: 1.64; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(330px, 1fr)); gap: 18px; }
+    .section-spaced { margin-top: 18px; }
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      padding: 24px;
+      border-radius: 22px;
+      box-shadow: 0 8px 28px rgba(14, 33, 77, 0.06);
+    }
+    .card.alt { background: var(--surface-alt); }
+    button,
+    input[type=file]::file-selector-button {
+      border: 0;
+      background: var(--primary);
+      color: #fff;
+      padding: 11px 18px;
+      border-radius: 999px;
+      cursor: pointer;
+      font-weight: 700;
+      font-size: 14px;
+      transition: transform .14s ease, background-color .14s ease, box-shadow .14s ease;
+      box-shadow: 0 7px 16px rgba(53, 84, 209, 0.26);
+    }
+    button:hover, input[type=file]::file-selector-button:hover { background: var(--primary-strong); transform: translateY(-1px); }
+    button:disabled { opacity: .5; cursor: not-allowed; transform: none; box-shadow: none; }
+    button.secondary { background: #e9efff; color: #1d2d5a; box-shadow: none; }
+    input[type=file] { display: block; margin: 16px 0; width: 100%; color: var(--text-muted); }
+    select {
+      border: 1px solid var(--border);
+      border-radius: 13px;
+      padding: 11px 14px;
+      background: #fff;
+      font: inherit;
+      color: var(--text);
+      outline: none;
+    }
+    textarea, pre {
+      width: 100%;
+      border: 1px solid var(--border);
+      border-radius: 15px;
+      padding: 14px;
+      font: inherit;
+      font-size: 14px;
+      background: #fff;
+      direction: auto;
+    }
+    textarea {
+      min-height: 190px;
+      resize: vertical;
+      transition: border-color .15s ease, box-shadow .15s ease;
+    }
+    textarea:focus, select:focus {
+      border-color: #a7b9f8;
+      box-shadow: 0 0 0 4px rgba(83, 115, 255, 0.15);
+    }
+    pre { white-space: pre-wrap; max-height: 360px; overflow: auto; line-height: 1.5; }
+    .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+    .field { display: grid; gap: 8px; margin: 14px 0; }
+    .status {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 13px;
+      border-radius: 999px;
+      background: #e9efff;
+      color: #2a3f84;
+      font-weight: 700;
+      font-size: 13px;
+      border: 1px solid #d0dcff;
+    }
+    .processing-indicator {
+      display: none;
+      align-items: center;
+      gap: 10px;
+      margin-top: 14px;
+      color: #2a3f84;
+      font-size: 13px;
+      font-weight: 700;
+    }
+    .processing-indicator.is-active { display: inline-flex; }
+    .spinner {
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      border: 3px solid #d0dcff;
+      border-top-color: var(--primary);
+      animation: spin .8s linear infinite;
+      flex: 0 0 auto;
+    }
+    .elapsed {
+      font-variant-numeric: tabular-nums;
+      color: #172033;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 11px;
+      border-radius: 999px;
+      background: #eef3ff;
+      color: #2c3f80;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: .02em;
+      margin-bottom: 10px;
+      text-transform: uppercase;
+    }
+    .error { color: #9b111e; background: #fff0f1; padding: 12px; border-radius: 14px; border: 1px solid #ffd7dc; }
+    .warning { color: #7a4b00; background: #fff7e5; padding: 12px; border-radius: 14px; border: 1px solid #ffe4ad; }
+    .muted { color: var(--text-muted); font-size: 14px; }
+    .summary-list li { margin: 7px 0; color: #29344e; }
+    img { max-width: 100%; border-radius: 18px; border: 1px solid var(--border); box-shadow: 0 7px 20px rgba(16, 40, 98, 0.08); }
+    .score-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px; }
+    .score-card {
+      background: linear-gradient(145deg, #ffffff 0%, #f2f6ff 100%);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 16px;
+    }
+    .score-card h3 { margin: 0 0 10px; font-size: 16px; letter-spacing: -0.01em; }
+    .score-row { margin: 11px 0; }
+    .score-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 6px;
+      color: #35415f;
+      font-size: 13px;
+      font-weight: 700;
+    }
+    .score-head span:last-child { color: #243e95; }
+    .meter {
+      height: 9px;
+      border-radius: 999px;
+      background: #e5ebfa;
+      overflow: hidden;
+    }
+    .meter > i {
+      display: block;
+      height: 100%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, #5574ff 0%, #6f49e8 100%);
+      width: 0%;
+      transition: width .35s ease;
+    }
+    [dir="rtl"] { text-align: right; }
+    @media (max-width: 740px) {
+      main { padding: 20px 13px 52px; }
+      .hero, .card { padding: 18px; border-radius: 18px; }
+      .row button { width: 100%; }
+    }
+  </style>
+</head>
+<body>
+<main>
+  <section class="hero">
+    <h1>Meeting Social Agent</h1>
+    <p>Upload a recorded meeting. The agent creates side-by-side outputs from Groq/cloud and from your trained/local pipeline, then uses the selected output for Facebook and Instagram drafts.</p>
+    <p class="muted">Arabic is supported: choose Arabic before upload to guide transcription, summary, Facebook post, Instagram caption, and the recap image.</p>
+    <div class="row">
+      <div class="status" id="status">Ready</div>
+      <div class="status" id="selectedSource">Selected source: not processed</div>
+    </div>
+  </section>
+
+  <section class="grid">
+    <div class="card">
+      <h2>1. Upload recording</h2>
+      <div class="field">
+        <label for="language">Meeting language</label>
+        <select id="language">
+          <option value="auto">Auto-detect / نفس لغة الاجتماع</option>
+          <option value="ar">Arabic / العربية</option>
+          <option value="en">English</option>
+        </select>
+      </div>
+      <input id="file" type="file" accept=".mp3,.mp4,.mpeg,.mpga,.m4a,.wav,.webm,.ogg" />
+      <button id="uploadBtn">Upload</button>
+      <p class="muted" id="meetingId"></p>
+    </div>
+
+    <div class="card">
+      <h2>2. Process</h2>
+      <p>Choose processing mode:</p>
+      <div class="field">
+        <label for="processMode">Pipeline mode</label>
+        <select id="processMode">
+          <option value="groq" selected>Groq/cloud only (faster)</option>
+          <option value="trained">Trained/local only</option>
+          <option value="both">Both pipelines (slower)</option>
+        </select>
+      </div>
+      <button id="processBtn" disabled>Process meeting</button>
+      <div class="processing-indicator" id="processingIndicator" role="status" aria-live="polite" aria-atomic="true">
+        <span class="spinner" aria-hidden="true"></span>
+        <span id="processingText">Processing meeting</span>
+        <span class="elapsed" id="elapsedTime">00:00</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="card section-spaced">
+    <h2>Pipeline errors / warnings</h2>
+    <div id="comparisonErrors" class="muted">No pipeline errors yet.</div>
+  </section>
+
+  <section class="grid section-spaced">
+    <div class="card alt">
+      <div class="badge">Speech to text from Groq</div>
+      <pre id="groqTranscript">Groq transcript appears after processing.</pre>
+    </div>
+    <div class="card alt">
+      <div class="badge">Speech to text from our training</div>
+      <pre id="trainedTranscript">Trained/local transcript appears after processing.</pre>
+    </div>
+  </section>
+
+  <section class="card section-spaced">
+    <h2>Truth percentage dashboard</h2>
+    <p class="muted">Estimated quality based on cross-pipeline agreement, summary completeness, and transcript-summary consistency.</p>
+    <div class="score-grid" id="truthScores">
+      <div class="score-card">
+        <h3>Groq / Cloud</h3>
+        <div class="score-row">
+          <div class="score-head"><span>Speech text truth</span><span id="groqSpeechTruth">--%</span></div>
+          <div class="meter"><i id="groqSpeechTruthBar"></i></div>
+        </div>
+        <div class="score-row">
+          <div class="score-head"><span>Summary truth</span><span id="groqSummaryTruth">--%</span></div>
+          <div class="meter"><i id="groqSummaryTruthBar"></i></div>
+        </div>
+      </div>
+      <div class="score-card">
+        <h3>Our training / Local</h3>
+        <div class="score-row">
+          <div class="score-head"><span>Speech text truth</span><span id="trainedSpeechTruth">--%</span></div>
+          <div class="meter"><i id="trainedSpeechTruthBar"></i></div>
+        </div>
+        <div class="score-row">
+          <div class="score-head"><span>Summary truth</span><span id="trainedSummaryTruth">--%</span></div>
+          <div class="meter"><i id="trainedSummaryTruthBar"></i></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="grid section-spaced">
+    <div class="card alt">
+      <div class="badge">Summary from Groq</div>
+      <div id="groqSummary" class="muted">Groq summary appears after processing.</div>
+    </div>
+    <div class="card alt">
+      <div class="badge">Summary from our training</div>
+      <div id="trainedSummary" class="muted">Trained/local summary appears after processing.</div>
+    </div>
+  </section>
+
+  <section class="grid section-spaced">
+    <div class="card">
+      <h2>Selected summary used for social drafts</h2>
+      <div id="summary"></div>
+    </div>
+    <div class="card">
+      <h2>Instagram image</h2>
+      <div id="imageBox" class="muted">Generated after processing.</div>
+    </div>
+  </section>
+
+  <section class="grid section-spaced">
+    <div class="card">
+      <h2>Facebook draft</h2>
+      <textarea id="facebookPost" placeholder="Facebook draft will appear here"></textarea>
+    </div>
+    <div class="card">
+      <h2>Instagram caption</h2>
+      <textarea id="instagramCaption" placeholder="Instagram caption will appear here"></textarea>
+    </div>
+  </section>
+
+  <section class="card section-spaced">
+    <h2>3. Review, approve, publish</h2>
+    <div class="row">
+      <button id="saveDraftBtn" class="secondary" disabled>Save edited drafts</button>
+      <button id="approveBtn" disabled>Approve drafts</button>
+      <button id="publishFbBtn" disabled>Publish to Facebook</button>
+      <button id="publishIgBtn" disabled>Publish to Instagram</button>
+    </div>
+    <div id="result" class="section-spaced"></div>
+  </section>
+
+  <section class="card section-spaced">
+    <h2>Selected transcript used for social drafts</h2>
+    <pre id="transcript">Transcript appears after processing.</pre>
+  </section>
+</main>
+
+<script>
+  let currentMeetingId = null;
+  let currentMeeting = null;
+  let isProcessingRequest = false;
+  let processingTimer = null;
+  let processingStartedAt = null;
+
+  const el = (id) => document.getElementById(id);
+  const busyStatuses = ['transcribing_groq','transcribing_trained','summarizing_groq','summarizing_trained'];
+
+  function setStatus(text) { el('status').textContent = text; }
+  function showError(err) { el('result').innerHTML = `<div class="error">${escapeHtml(String(err))}</div>`; }
+  function escapeHtml(str) { return String(str || '').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m])); }
+  function looksArabic(str) { return /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF]/.test(str || ''); }
+  function dirFor(str) { return looksArabic(str) ? 'rtl' : 'auto'; }
+  function fileNameFromPath(path) { return String(path || '').split(/[\\/]/).pop(); }
+  function clamp01(v) { return Math.min(1, Math.max(0, v)); }
+  function roundPercent(v) { return `${Math.round(v)}%`; }
+  function formatElapsed(ms) {
+    const totalSeconds = Math.max(0, Math.floor(ms / 1000));
+    const minutes = String(Math.floor(totalSeconds / 60)).padStart(2, '0');
+    const seconds = String(totalSeconds % 60).padStart(2, '0');
+    return `${minutes}:${seconds}`;
+  }
+  function updateProcessingElapsed() {
+    if (!processingStartedAt) return;
+    const elapsed = formatElapsed(Date.now() - processingStartedAt);
+    el('elapsedTime').textContent = elapsed;
+    setStatus(`Processing ${elapsed}`);
+  }
+  function startProcessingTimer(label) {
+    stopProcessingTimer();
+    processingStartedAt = Date.now();
+    el('processingText').textContent = label || 'Processing meeting';
+    el('elapsedTime').textContent = '00:00';
+    el('processingIndicator').classList.add('is-active');
+    el('processBtn').setAttribute('aria-busy', 'true');
+    updateProcessingElapsed();
+    processingTimer = window.setInterval(updateProcessingElapsed, 1000);
+  }
+  function stopProcessingTimer() {
+    if (processingTimer) window.clearInterval(processingTimer);
+    processingTimer = null;
+    processingStartedAt = null;
+    el('processingIndicator').classList.remove('is-active');
+    el('processBtn').removeAttribute('aria-busy');
+  }
+  function safeText(value) { return String(value || '').toLowerCase().replace(/[^\p{L}\p{N}\s]/gu, ' '); }
+  function tokenize(value) {
+    return safeText(value).split(/\s+/).filter((x) => x && x.length > 2);
+  }
+  function jaccardSimilarity(a, b) {
+    const sa = new Set(tokenize(a));
+    const sb = new Set(tokenize(b));
+    if (sa.size === 0 || sb.size === 0) return 0;
+    let intersection = 0;
+    for (const token of sa) if (sb.has(token)) intersection += 1;
+    const union = sa.size + sb.size - intersection;
+    return union ? intersection / union : 0;
+  }
+  function summaryToText(summary) {
+    if (!summary) return '';
+    const actionText = (summary.action_items || [])
+      .map((x) => `${x.owner || ''} ${x.task || ''} ${x.deadline || ''}`)
+      .join(' ');
+    return [
+      summary.title,
+      summary.short_summary,
+      ...(summary.key_points || []),
+      ...(summary.decisions || []),
+      ...(summary.risks_or_sensitive_items || []),
+      actionText
+    ].join(' ');
+  }
+  function summaryCompleteness(summary) {
+    if (!summary) return 0;
+    const checks = [
+      !!String(summary.title || '').trim(),
+      !!String(summary.short_summary || '').trim(),
+      (summary.key_points || []).length > 0,
+      (summary.decisions || []).length > 0,
+      (summary.action_items || []).length > 0,
+      (summary.risks_or_sensitive_items || []).length > 0
+    ];
+    return checks.filter(Boolean).length / checks.length;
+  }
+  function setMeter(textId, barId, score) {
+    const pct = Math.round(Math.max(0, Math.min(100, score)));
+    el(textId).textContent = `${pct}%`;
+    el(barId).style.width = `${pct}%`;
+  }
+  function renderTruthScores(meeting) {
+    const groqTranscript = meeting.groq_transcript_text || '';
+    const trainedTranscript = meeting.trained_transcript_text || '';
+    const groqSummary = meeting.groq_summary_json || null;
+    const trainedSummary = meeting.trained_summary_json || null;
+
+    const transcriptAgreement = jaccardSimilarity(groqTranscript, trainedTranscript);
+    const groqLengthScore = clamp01(tokenize(groqTranscript).length / 240);
+    const trainedLengthScore = clamp01(tokenize(trainedTranscript).length / 240);
+    const groqSpeechTruth = 35 + (transcriptAgreement * 45) + (groqLengthScore * 20);
+    const trainedSpeechTruth = 35 + (transcriptAgreement * 45) + (trainedLengthScore * 20);
+
+    const groqSummaryText = summaryToText(groqSummary);
+    const trainedSummaryText = summaryToText(trainedSummary);
+    const summaryAgreement = jaccardSimilarity(groqSummaryText, trainedSummaryText);
+    const groqSummaryFit = jaccardSimilarity(groqTranscript, groqSummaryText);
+    const trainedSummaryFit = jaccardSimilarity(trainedTranscript, trainedSummaryText);
+    const groqSummaryTruth = 30 + (summaryCompleteness(groqSummary) * 30) + (groqSummaryFit * 25) + (summaryAgreement * 15);
+    const trainedSummaryTruth = 30 + (summaryCompleteness(trainedSummary) * 30) + (trainedSummaryFit * 25) + (summaryAgreement * 15);
+
+    setMeter('groqSpeechTruth', 'groqSpeechTruthBar', groqSpeechTruth);
+    setMeter('trainedSpeechTruth', 'trainedSpeechTruthBar', trainedSpeechTruth);
+    setMeter('groqSummaryTruth', 'groqSummaryTruthBar', groqSummaryTruth);
+    setMeter('trainedSummaryTruth', 'trainedSummaryTruthBar', trainedSummaryTruth);
+  }
+
+  function applyTextDirection() {
+    el('facebookPost').dir = dirFor(el('facebookPost').value);
+    el('instagramCaption').dir = dirFor(el('instagramCaption').value);
+    el('transcript').dir = dirFor(el('transcript').textContent);
+    el('groqTranscript').dir = dirFor(el('groqTranscript').textContent);
+    el('trainedTranscript').dir = dirFor(el('trainedTranscript').textContent);
+  }
+
+  function renderSummaryBox(targetId, summary) {
+    const target = el(targetId);
+    if (!summary) {
+      target.className = 'muted';
+      target.textContent = 'No summary yet.';
+      return;
+    }
+    target.className = '';
+    const summaryDir = dirFor(JSON.stringify(summary));
+    target.setAttribute('dir', summaryDir);
+    target.innerHTML = `
+      <h3>${escapeHtml(summary.title || '')}</h3>
+      <p>${escapeHtml(summary.short_summary || '')}</p>
+      <strong>${summaryDir === 'rtl' ? 'النقاط الرئيسية' : 'Key points'}</strong>
+      <ul class="summary-list">${(summary.key_points || []).map(x => `<li>${escapeHtml(x)}</li>`).join('')}</ul>
+      <strong>${summaryDir === 'rtl' ? 'القرارات' : 'Decisions'}</strong>
+      <ul class="summary-list">${(summary.decisions || []).map(x => `<li>${escapeHtml(x)}</li>`).join('')}</ul>
+      <strong>${summaryDir === 'rtl' ? 'المهام' : 'Action items'}</strong>
+      <ul class="summary-list">${(summary.action_items || []).map(x => `<li>${escapeHtml(x.owner)} — ${escapeHtml(x.task)} (${escapeHtml(x.deadline)})</li>`).join('')}</ul>
+      <strong>${summaryDir === 'rtl' ? 'تنبيهات للمراجعة' : 'Review warnings'}</strong>
+      <ul class="summary-list">${(summary.risks_or_sensitive_items || []).map(x => `<li>${escapeHtml(x)}</li>`).join('')}</ul>
+    `;
+  }
+
+  function renderErrors(errors) {
+    if (!errors || Object.keys(errors).length === 0) {
+      el('comparisonErrors').className = 'muted';
+      el('comparisonErrors').textContent = 'No pipeline errors.';
+      return;
+    }
+    el('comparisonErrors').className = 'warning';
+    el('comparisonErrors').innerHTML = Object.entries(errors)
+      .map(([key, value]) => `<strong>${escapeHtml(key)}</strong>: ${escapeHtml(value)}`)
+      .join('<br>');
+  }
+
+  function renderMeeting(meeting) {
+    currentMeeting = meeting;
+    currentMeetingId = meeting.id;
+    el('meetingId').textContent = `Meeting ID: ${meeting.id} · Language: ${meeting.language || 'auto'}`;
+    setStatus(meeting.status || 'Ready');
+    el('selectedSource').textContent = `Selected source: ${meeting.selected_source || 'not processed'}`;
+
+    el('processBtn').disabled = !meeting.id || busyStatuses.includes(meeting.status);
+    el('saveDraftBtn').disabled = !meeting.facebook_post && !meeting.instagram_caption;
+    el('approveBtn').disabled = !meeting.facebook_post && !meeting.instagram_caption;
+    el('publishFbBtn').disabled = !meeting.approved;
+    el('publishIgBtn').disabled = !meeting.approved;
+
+    el('facebookPost').value = meeting.facebook_post || '';
+    el('instagramCaption').value = meeting.instagram_caption || '';
+
+    el('groqTranscript').textContent = meeting.groq_transcript_text || 'Groq transcript appears after processing.';
+    el('trainedTranscript').textContent = meeting.trained_transcript_text || 'Trained/local transcript appears after processing.';
+    el('transcript').textContent = meeting.transcript_text || 'Transcript appears after processing.';
+
+    renderSummaryBox('groqSummary', meeting.groq_summary_json);
+    renderSummaryBox('trainedSummary', meeting.trained_summary_json);
+    renderSummaryBox('summary', meeting.summary_json);
+    renderTruthScores(meeting);
+    renderErrors(meeting.comparison_errors);
+
+    applyTextDirection();
+
+    if (meeting.instagram_image_path) {
+      const name = fileNameFromPath(meeting.instagram_image_path);
+      el('imageBox').innerHTML = `<img src="/storage/generated/${encodeURIComponent(name)}" alt="Instagram recap image" />`;
+    } else {
+      el('imageBox').textContent = 'Generated after processing.';
+    }
+
+    if (meeting.error) showError(meeting.error);
+  }
+
+  async function api(path, options = {}) {
+    const res = await fetch(path, options);
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.detail || JSON.stringify(data));
+    return data;
+  }
+
+  el('facebookPost').addEventListener('input', applyTextDirection);
+  el('instagramCaption').addEventListener('input', applyTextDirection);
+
+  el('uploadBtn').onclick = async () => {
+    const file = el('file').files[0];
+    if (!file) return showError('Choose a meeting recording first.');
+    const form = new FormData();
+    form.append('file', file);
+    form.append('language', el('language').value);
+    try {
+      setStatus('Uploading');
+      const meeting = await api('/api/meetings', { method: 'POST', body: form });
+      renderMeeting(meeting);
+      el('result').textContent = 'Uploaded successfully.';
+    } catch (err) { showError(err); setStatus('Error'); }
+  };
+
+  el('processBtn').onclick = async () => {
+    if (!currentMeetingId || isProcessingRequest) return;
+    isProcessingRequest = true;
+    el('processBtn').disabled = true;
+    try {
+      setStatus('Processing');
+      const mode = el('processMode').value || 'groq';
+      const modeLabel = mode === 'both' ? 'Processing both pipelines' : `Processing ${mode} pipeline`;
+      startProcessingTimer(modeLabel);
+      el('result').textContent = mode === 'both'
+        ? 'Processing both pipelines. This can take several minutes.'
+        : `Processing ${mode} pipeline. Please wait...`;
+      const meeting = await api(`/api/meetings/${currentMeetingId}/process?mode=${encodeURIComponent(mode)}`, { method: 'POST' });
+      renderMeeting(meeting);
+      el('result').textContent = 'Drafts are ready for review.';
+    } catch (err) { showError(err); setStatus('Error'); }
+    finally {
+      stopProcessingTimer();
+      isProcessingRequest = false;
+      if (currentMeeting && currentMeeting.id) {
+        const busy = busyStatuses.includes(currentMeeting.status);
+        el('processBtn').disabled = busy;
+      } else {
+        el('processBtn').disabled = !currentMeetingId;
+      }
+    }
+  };
+
+  el('saveDraftBtn').onclick = async () => {
+    if (!currentMeetingId) return;
+    try {
+      const meeting = await api(`/api/meetings/${currentMeetingId}/draft`, {
+        method: 'PATCH',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+          facebook_post: el('facebookPost').value,
+          instagram_caption: el('instagramCaption').value
+        })
+      });
+      renderMeeting(meeting);
+      el('result').textContent = 'Drafts saved. Approval reset because the drafts changed.';
+    } catch (err) { showError(err); }
+  };
+
+  el('approveBtn').onclick = async () => {
+    if (!currentMeetingId) return;
+    try {
+      const meeting = await api(`/api/meetings/${currentMeetingId}/approve`, { method: 'POST' });
+      renderMeeting(meeting);
+      el('result').textContent = 'Approved. Publishing buttons are now enabled.';
+    } catch (err) { showError(err); }
+  };
+
+  el('publishFbBtn').onclick = async () => {
+    if (!currentMeetingId) return;
+    try {
+      setStatus('Publishing Facebook');
+      const result = await api(`/api/meetings/${currentMeetingId}/publish/facebook`, { method: 'POST' });
+      el('result').innerHTML = `<pre>${escapeHtml(JSON.stringify(result, null, 2))}</pre>`;
+      setStatus('Published Facebook');
+    } catch (err) { showError(err); setStatus('Error'); }
+  };
+
+  el('publishIgBtn').onclick = async () => {
+    if (!currentMeetingId) return;
+    try {
+      setStatus('Publishing Instagram');
+      const result = await api(`/api/meetings/${currentMeetingId}/publish/instagram`, { method: 'POST' });
+      el('result').innerHTML = `<pre>${escapeHtml(JSON.stringify(result, null, 2))}</pre>`;
+      setStatus('Published Instagram');
+    } catch (err) { showError(err); setStatus('Error'); }
+  };
+</script>
+</body>
+</html>

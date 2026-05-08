@@ -1,0 +1,22 @@
+services:
+  - type: web
+    name: meeting-social-agent
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.9
+      - key: TRANSCRIPTION_BACKEND
+        value: groq
+      - key: SUMMARY_BACKEND
+        value: groq
+      - key: TRAINED_TRANSCRIPTION_BACKEND
+        value: disabled
+      - key: TRAINED_SUMMARY_BACKEND
+        value: disabled
+      - key: DRAFT_SOURCE
+        value: groq
+      - key: DEFAULT_LANGUAGE
+        value: auto

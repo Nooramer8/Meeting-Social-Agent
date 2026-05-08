@@ -1,0 +1,14 @@
+.venv/
+__pycache__/
+*.pyc
+.env
+storage/*.db
+storage/uploads/*
+storage/generated/*
+!storage/uploads/.gitkeep
+!storage/generated/.gitkeep
+models/
+data/
+training/
+*.safetensors
+*.bin
