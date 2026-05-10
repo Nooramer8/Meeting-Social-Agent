@@ -13,6 +13,7 @@ from pydantic import TypeAdapter
 
 from app.config import get_settings
 from app.models import ActionItem, MeetingSummary
+from app.services.model_downloader import ensure_trained_summary_model
 from app.services.transcription import normalize_language
 
 
@@ -515,6 +516,7 @@ def summarize_transcript_trained(transcript_text: str, target_language: str | No
         return _rule_based_summary(transcript, lang_code)
 
     if backend == 'transformers_seq2seq':
+        ensure_trained_summary_model(settings)
         model_path = settings.trained_summary_model_path
         if not Path(model_path).exists():
             raise RuntimeError(f'Trained summarizer model not found: {model_path}. Train it first or use TRAINED_SUMMARY_BACKEND=rule_based.')

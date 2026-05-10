@@ -9,6 +9,7 @@ from groq import Groq
 from openai import OpenAI
 
 from app.config import get_settings
+from app.services.model_downloader import ensure_trained_asr_model
 
 
 SUPPORTED_EXTENSIONS = {'.mp3', '.mp4', '.mpeg', '.mpga', '.m4a', '.wav', '.webm', '.ogg'}
@@ -218,6 +219,7 @@ def transcribe_file_trained(file_path: str | Path, language: str | None = None) 
         }
 
     if backend == 'transformers_whisper':
+        ensure_trained_asr_model(settings)
         model_path = settings.trained_asr_model_path
         if not Path(model_path).exists():
             raise RuntimeError(f'Trained ASR model not found: {model_path}. Train it first or use TRAINED_TRANSCRIPTION_BACKEND=faster_whisper.')

@@ -70,12 +70,9 @@ def _ensure_model(destination: Path, archive_url: str | None, hf_repo_id: str | 
         return
 
 
-def ensure_trained_models(settings: Settings) -> None:
-    """Download trained model artifacts at startup when local trained modes are enabled."""
-    trained_asr = (settings.trained_transcription_backend or 'disabled').strip().lower()
-    trained_summary = (settings.trained_summary_backend or 'disabled').strip().lower()
-
-    if trained_asr == 'transformers_whisper':
+def ensure_trained_asr_model(settings: Settings) -> None:
+    """Download the trained ASR model only when the trained ASR pipeline is used."""
+    if (settings.trained_transcription_backend or 'disabled').strip().lower() == 'transformers_whisper':
         _ensure_model(
             Path(settings.trained_asr_model_path),
             settings.trained_asr_archive_url,
@@ -84,7 +81,10 @@ def ensure_trained_models(settings: Settings) -> None:
             settings.trained_asr_hf_revision,
         )
 
-    if trained_summary == 'transformers_seq2seq':
+
+def ensure_trained_summary_model(settings: Settings) -> None:
+    """Download the trained summarizer only when the trained summary pipeline is used."""
+    if (settings.trained_summary_backend or 'disabled').strip().lower() == 'transformers_seq2seq':
         _ensure_model(
             Path(settings.trained_summary_model_path),
             settings.trained_summary_archive_url,
@@ -92,3 +92,9 @@ def ensure_trained_models(settings: Settings) -> None:
             settings.huggingface_token,
             settings.trained_summary_hf_revision,
         )
+
+
+def ensure_trained_models(settings: Settings) -> None:
+    """Download all trained model artifacts. Prefer lazy per-pipeline calls in web deployments."""
+    ensure_trained_asr_model(settings)
+    ensure_trained_summary_model(settings)
