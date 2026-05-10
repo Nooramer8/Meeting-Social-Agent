@@ -41,7 +41,14 @@ def startup() -> None:
 
 @app.get('/')
 def index() -> FileResponse:
-    return FileResponse(Path(__file__).parent / 'static' / 'index.html')
+    return FileResponse(
+        Path(__file__).parent / 'static' / 'index.html',
+        headers={
+            'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0',
+            'Pragma': 'no-cache',
+            'Expires': '0',
+        },
+    )
 
 
 @app.get('/health')
