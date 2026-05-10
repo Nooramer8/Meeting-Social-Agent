@@ -135,6 +135,38 @@ https://meeting-social-agent.onrender.com
 
 The Instagram Content Publishing API needs an image or video URL that Meta can fetch from the public internet. Localhost URLs will not work for Instagram publishing. Deploy this app somewhere public, set `PUBLIC_BASE_URL`, and make sure `/storage/generated/...` files are reachable.
 
+## Deploy trained models without committing them
+
+Keep `models/` out of Git. For production, upload each final model folder to Hugging Face or as an archive on S3/R2, then let the app download it at startup.
+
+Hugging Face example:
+
+```text
+TRAINED_TRANSCRIPTION_BACKEND=transformers_whisper
+TRAINED_ASR_HF_REPO_ID=your-user/whisper-ar-meetings
+TRAINED_ASR_MODEL_PATH=models/asr/whisper-ar-meetings
+
+TRAINED_SUMMARY_BACKEND=transformers_seq2seq
+TRAINED_SUMMARY_HF_REPO_ID=your-user/meeting-summary-ar
+TRAINED_SUMMARY_MODEL_PATH=models/summarizer/meeting-summary-ar
+
+HUGGINGFACE_TOKEN=hf_your_token_if_the_repos_are_private
+```
+
+S3/R2 archive example:
+
+```text
+TRAINED_TRANSCRIPTION_BACKEND=transformers_whisper
+TRAINED_ASR_ARCHIVE_URL=https://your-bucket.example.com/whisper-ar-meetings.zip
+TRAINED_ASR_MODEL_PATH=models/asr/whisper-ar-meetings
+
+TRAINED_SUMMARY_BACKEND=transformers_seq2seq
+TRAINED_SUMMARY_ARCHIVE_URL=https://your-bucket.example.com/meeting-summary-ar.zip
+TRAINED_SUMMARY_MODEL_PATH=models/summarizer/meeting-summary-ar
+```
+
+Each archive should contain the model files directly, such as `config.json`, tokenizer files, and `model.safetensors`.
+
 ## API endpoints
 
 ```text

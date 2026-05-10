@@ -1,0 +1,12 @@
+.git
+.venv
+__pycache__
+*.pyc
+.env
+
+data/
+training/
+models/
+storage/*.db
+storage/uploads/*
+storage/generated/*

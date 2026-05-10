@@ -13,6 +13,7 @@ from app.db import create_meeting, get_meeting, init_db, list_meetings, update_m
 from app.models import DraftUpdate, MeetingSummary
 from app.services.image_generator import create_instagram_recap_image, public_url_for_generated_file
 from app.services.meta_publisher import publish_facebook_post, publish_instagram_image
+from app.services.model_downloader import ensure_trained_models
 from app.services.summarizer import summarize_transcript, summarize_transcript_trained
 from app.services.transcription import SUPPORTED_EXTENSIONS, normalize_language, transcribe_file, transcribe_file_trained
 
@@ -34,6 +35,7 @@ app.mount('/storage/generated', StaticFiles(directory=settings.generated_path), 
 
 @app.on_event('startup')
 def startup() -> None:
+    ensure_trained_models(settings)
     init_db()
 
 
