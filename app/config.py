@@ -30,7 +30,7 @@ class Settings(BaseSettings):
         return str(value).strip()
 
     # Local/trained ASR pipeline
-    # trained_transcription_backend: faster_whisper, transformers_whisper, or disabled
+    # trained_transcription_backend: faster_whisper, transformers_whisper, remote, or disabled
     trained_transcription_backend: str = 'faster_whisper'
     trained_transcription_model_size: str = 'small'
     trained_asr_model_path: str = 'models/asr/whisper-ar-meetings'
@@ -41,13 +41,14 @@ class Settings(BaseSettings):
     trained_asr_hf_revision: str | None = None
 
     # Local/trained summarization pipeline
-    # trained_summary_backend: rule_based, transformers_seq2seq, or disabled
+    # trained_summary_backend: rule_based, transformers_seq2seq, remote, or disabled
     trained_summary_backend: str = 'rule_based'
     trained_summary_model_path: str = 'models/summarizer/meeting-summary-ar'
     trained_summary_device: str = 'cpu'
     trained_summary_archive_url: str | None = None
     trained_summary_hf_repo_id: str | None = None
     trained_summary_hf_revision: str | None = None
+    trained_remote_api_url: str | None = None
     huggingface_token: str | None = None
 
     # Which successful pipeline should populate the editable drafts: groq or trained.

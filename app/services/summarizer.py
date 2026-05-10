@@ -7,6 +7,7 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Any
 
+import requests
 from groq import BadRequestError, Groq
 from openai import OpenAI
 from pydantic import TypeAdapter
@@ -538,4 +539,23 @@ def summarize_transcript_trained(transcript_text: str, target_language: str | No
         generated = tokenizer.decode(outputs[0], skip_special_tokens=False)
         return _build_structured_summary_from_text(transcript, generated, lang_code)
 
-    raise ValueError('TRAINED_SUMMARY_BACKEND must be rule_based, transformers_seq2seq, or disabled.')
+    if backend == 'remote':
+        if not settings.trained_remote_api_url:
+            raise RuntimeError('TRAINED_REMOTE_API_URL is missing. Set it to your Colab tunnel URL.')
+        url = settings.trained_remote_api_url.rstrip('/') + '/summarize'
+        response = requests.post(
+            url,
+            json={'transcript': transcript, 'target_language': lang_code},
+            timeout=settings.cloud_request_timeout_seconds,
+        )
+        response.raise_for_status()
+        data = response.json()
+        summary_data = data.get('summary') if isinstance(data.get('summary'), dict) else data
+        if isinstance(summary_data, dict) and 'short_summary' in summary_data:
+            return TypeAdapter(MeetingSummary).validate_python(summary_data)
+        generated = data.get('text') or data.get('generated_summary') or ''
+        if not generated:
+            raise RuntimeError('Remote trained summarizer returned no summary.')
+        return _build_structured_summary_from_text(transcript, generated, lang_code)
+
+    raise ValueError('TRAINED_SUMMARY_BACKEND must be rule_based, transformers_seq2seq, remote, or disabled.')

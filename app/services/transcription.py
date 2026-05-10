@@ -5,6 +5,7 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Any
 
+import requests
 from groq import Groq
 from openai import OpenAI
 
@@ -234,4 +235,22 @@ def transcribe_file_trained(file_path: str | Path, language: str | None = None) 
         text = result.get('text', '') if isinstance(result, dict) else str(result)
         return text, {'backend': 'transformers_whisper', 'model_path': model_path, 'raw': result}
 
-    raise ValueError('TRAINED_TRANSCRIPTION_BACKEND must be faster_whisper, transformers_whisper, or disabled.')
+    if backend == 'remote':
+        if not settings.trained_remote_api_url:
+            raise RuntimeError('TRAINED_REMOTE_API_URL is missing. Set it to your Colab tunnel URL.')
+        url = settings.trained_remote_api_url.rstrip('/') + '/transcribe'
+        with path.open('rb') as audio_file:
+            response = requests.post(
+                url,
+                files={'file': (path.name, audio_file, 'application/octet-stream')},
+                data={'language': lang},
+                timeout=settings.cloud_request_timeout_seconds,
+            )
+        response.raise_for_status()
+        data = response.json()
+        text = data.get('text') or data.get('transcript') or ''
+        if not text:
+            raise RuntimeError('Remote trained ASR returned no transcript text.')
+        return text, {'backend': 'remote', 'url': url, 'raw': data}
+
+    raise ValueError('TRAINED_TRANSCRIPTION_BACKEND must be faster_whisper, transformers_whisper, remote, or disabled.')
