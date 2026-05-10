@@ -21,6 +21,7 @@ import soundfile as sf
 import torch
 import uvicorn
 from fastapi import FastAPI, File, Form, UploadFile
+from huggingface_hub import snapshot_download
 from scipy.signal import resample_poly
 from transformers import AutoModelForSeq2SeqLM, AutoTokenizer, pipeline
 
@@ -34,16 +35,34 @@ HF_TOKEN = "hf_your_token_here"
 app = FastAPI(title="Meeting Social Agent Colab Trained API")
 
 device_arg = 0 if torch.cuda.is_available() else -1
+
+asr_snapshot = Path(
+    snapshot_download(
+        ASR_REPO_ID,
+        token=HF_TOKEN,
+        allow_patterns=f"{ASR_SUBFOLDER}/*",
+    )
+)
+summary_snapshot = Path(
+    snapshot_download(
+        SUMMARY_REPO_ID,
+        token=HF_TOKEN,
+        allow_patterns=f"{SUMMARY_SUBFOLDER}/*",
+    )
+)
+asr_model_path = asr_snapshot / ASR_SUBFOLDER
+summary_model_path = summary_snapshot / SUMMARY_SUBFOLDER
+print("ASR model path:", asr_model_path)
+print("Summary model path:", summary_model_path)
+
 asr = pipeline(
     "automatic-speech-recognition",
-    model=ASR_REPO_ID,
-    token=HF_TOKEN,
-    subfolder=ASR_SUBFOLDER,
+    model=str(asr_model_path),
     device=device_arg,
     chunk_length_s=30,
 )
-summary_tokenizer = AutoTokenizer.from_pretrained(SUMMARY_REPO_ID, token=HF_TOKEN, subfolder=SUMMARY_SUBFOLDER)
-summary_model = AutoModelForSeq2SeqLM.from_pretrained(SUMMARY_REPO_ID, token=HF_TOKEN, subfolder=SUMMARY_SUBFOLDER)
+summary_tokenizer = AutoTokenizer.from_pretrained(summary_model_path)
+summary_model = AutoModelForSeq2SeqLM.from_pretrained(summary_model_path)
 if torch.cuda.is_available():
     summary_model = summary_model.to("cuda")
 summary_model.eval()
