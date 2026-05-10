@@ -27,6 +27,9 @@ from transformers import AutoModelForSeq2SeqLM, AutoTokenizer, pipeline
 
 ASR_REPO_ID = "Nooriso/whisper-ar-meetings"
 SUMMARY_REPO_ID = "Nooriso/meeting-summary-ar"
+ASR_SUBFOLDER = "whisper-ar-meetings"
+SUMMARY_SUBFOLDER = "meeting-summary-ar"
+HF_TOKEN = "hf_your_token_here"
 
 app = FastAPI(title="Meeting Social Agent Colab Trained API")
 
@@ -34,11 +37,13 @@ device_arg = 0 if torch.cuda.is_available() else -1
 asr = pipeline(
     "automatic-speech-recognition",
     model=ASR_REPO_ID,
+    token=HF_TOKEN,
+    subfolder=ASR_SUBFOLDER,
     device=device_arg,
     chunk_length_s=30,
 )
-summary_tokenizer = AutoTokenizer.from_pretrained(SUMMARY_REPO_ID)
-summary_model = AutoModelForSeq2SeqLM.from_pretrained(SUMMARY_REPO_ID)
+summary_tokenizer = AutoTokenizer.from_pretrained(SUMMARY_REPO_ID, token=HF_TOKEN, subfolder=SUMMARY_SUBFOLDER)
+summary_model = AutoModelForSeq2SeqLM.from_pretrained(SUMMARY_REPO_ID, token=HF_TOKEN, subfolder=SUMMARY_SUBFOLDER)
 if torch.cuda.is_available():
     summary_model = summary_model.to("cuda")
 summary_model.eval()
