@@ -268,7 +268,13 @@ def process_meeting(meeting_id: str, mode: str = 'both') -> dict:
     except Exception as exc:
         errors['process'] = str(exc)
         update_meeting(meeting_id, status='error', error=str(exc), comparison_errors=errors)
-        raise HTTPException(status_code=500, detail=str(exc)) from exc
+        raise HTTPException(
+            status_code=500,
+            detail={
+                'message': str(exc),
+                'comparison_errors': errors,
+            },
+        ) from exc
 
 
 @app.patch('/api/meetings/{meeting_id}/draft')
