@@ -5,7 +5,7 @@ import traceback
 
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, Response
 from fastapi.staticfiles import StaticFiles
 
 from app.config import get_settings
@@ -49,6 +49,11 @@ def index() -> FileResponse:
             'Expires': '0',
         },
     )
+
+
+@app.get('/favicon.ico', include_in_schema=False)
+def favicon() -> Response:
+    return Response(status_code=204)
 
 
 @app.get('/health')
